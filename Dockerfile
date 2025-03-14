@@ -25,22 +25,24 @@ RUN <<EOR
 EOR
 ###############################
 
-FROM alpine:latest AS dga-filesystem
-#FROM cgr.dev/chainguard/wolfi-base AS dga-filesystem
-#FROM bellsoft/alpaquita-linux-base:stream-glibc AS dga-filesystem
+FROM debian:bookworm-slim AS dga-filesystem
+COPY --from=dga-build /usr/local/bin/* /usr/local/bin/
+COPY --from=dga-build /usr/local/lib/librtlsdr.so.0.6git /usr/local/lib/
+COPY rtl-muntz.sh /
 
-WORKDIR /usr/local/bin
-COPY --from=dga-build /usr/local/bin/* .
-COPY rtl-tcp.sh .
-WORKDIR /usr/local/lib
-COPY --from=dga-build /usr/local/lib/librtlsdr.so.0.6git .
-RUN <<EOR
-    apk --no-cache add libusb gcompat bash
-#    apk --no-cache add libusb bash
-    ln -s librtlsdr.so.0.6git librtlsdr.so.0
-    ln -s /librtlsdr.so.0 librtlsdr.so
+RUN <<EOF
+    apt-get -yq update
+    apt-get -yq install libusb-1.0-0 busybox
+    apt-get clean
+
+	/rtl-muntz.sh
+	busybox --install -s
+	rm /rtl-muntz.sh
+    ln -s /usr/local/lib/librtlsdr.so.0.6git /usr/local/lib/librtlsdr.so.0
+    ln -s /usr/local/lib/librtlsdr.so.0 /usr/local/lib/librtlsdr.so
     chmod +x /usr/local/bin/*
-EOR
+EOF
+
 ##############################
 
 FROM scratch AS dga-install
