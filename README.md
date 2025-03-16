@@ -1,46 +1,47 @@
 # RTLSDR4
 
 Docker image for RTLSDR version 4.
-Includes the libraries and binaries for the version 4 
+Includes the libraries and binaries for the version 4
 RTLSDR DTV Stick.  Works with earlier versions also.
 
-This image is is based on Alpine Linux for the small image size.
-It can be used as a base image where RTLSDR4 libraries are needed
+This image is is based on Debian Linux.
 
 The standard suite of RTL_* binaries are available in /usr/local/bin
 Libraries can be found in /usr/local/lib
 
-See https://github.com/dgadams/rtlsdr4 for the files and example udev 
+See https://github.com/dgadams/rtlsdr4 for the files and example udev
 rules and blacklist command.
 
 ## Example Docker Compose yml file:
 ```
 # sets up a rtl_tcp server
 #
-# D. G. Adams 2024-Aug-28
+# D. G. Adams 2025-March-13
 #
-# Notes:    RTL_SERIAL - Serial number of the RTL device.
-#                        Don't use RTL_INDEX if RTL_SERIAL is used.
-#                        Get Serial number by running any rtl command.
-#                        Leading zeros in serial numbers are significant.
-#           RTL_INDEX -Device index.  Depends on load order which isn't consistent.
-#           RTL_ADDR - Listen address. default is 0.0.0.0
-#           RTL_PORT - Listen port. default is 1234
-#           RTL_GAIN - Default is 3.
-#           RTL_PPM_ERROR - Default is 0.
-#           RTL_FREQUENCY - Tune frequency in Hz. 
-  
+# rtl_tcp, an I/Q spectrum server for RTL2832 based DVB-T receivers
+#
+#Usage:
+#       [-a listen address. must be set. use  0.0.0.0 to listen all]
+#       [-p listen port (default: 1234)]
+#       [-f frequency to tune to [Hz]]
+#       [-g gain (default: 0 for auto)]
+#       [-s samplerate in Hz (default: 2048000 Hz)]
+#       [-b number of buffers (default: 15, set by library)]
+#       [-n max number of linked list buffers to keep (default: 500)]
+#       [-d device index (default: 0)]
+#       [-P ppm_error (default: 0)]
+#       [-T enable bias-T on GPIO PIN 0 (works for rtl-sdr.com v3/v4 dongles)]
+#       [-D enable direct sampling (default: off)]
+
 name: rtl-tcp
 services:
   rtl-tcp:
     container_name: rtl-tcp
-    image: rtlsdr4:latest
+    image: dgadams/rtlsdr4:latest
     restart: unless-stopped
-    command: /usr/local/bin/rtl-tcp.sh
+    command: "rtl_tcp -d 1 -a 0.0.0.0 -p 1234"
     devices:
       - /dev/bus/usb
     ports:
       - 1234:1234
-    environment:
-      - RTL_SERIAL=4
 ```
