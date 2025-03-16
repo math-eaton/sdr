@@ -1,6 +1,6 @@
 #!/bin/bash
 # This script uses a feature of bash - extglob which allows rm !(exception_list) to
-# selectively remove any file in the current image layer except those listed.  
+# selectively remove any file in the current image layer except those listed.
 # Used for muntzing libraries and files down to the minimal set needed to run the application.
 
 shopt -s extglob
@@ -20,11 +20,10 @@ shopt -s extglob
 	rm -fr $EXC
 
 #   Nuke some misc stuff
-	rm -rf /var/lib/dpkg
-	rm -rf /var/lib/apt
-	rm -rf /var/cache/debconf
-	rm -rf /var/cache/apt
-	rm -rf /usr/share
+#   Nuke anything not needed in the container
+    cd /var && rm -rf !(nothing)
+    cd /etc && rm -rf apt dpkg
+    cd /usr && rm -rf !(lib|bin|sbin|lib64|libexec|local)
 
 # 	And last remove everything from sbin and bin except busybox.
 	cd /usr/sbin && rm !(nothing)
