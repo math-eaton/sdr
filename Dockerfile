@@ -9,12 +9,12 @@
 # libraries are in /usr/local/lib
 # and rtl-* executables are in /usr/local/bin
 #
-FROM debian:trixie-slim AS dga-build
+FROM alpine AS dga-build
 
 WORKDIR /work
 RUN <<EOR
-    apt-get -yq update && \
-    apt-get -yq install libusb-1.0-0-dev git cmake build-essential pkg-config && \
+    apk update
+    apk add libusb-dev git cmake build-base pkgconfig 
     git clone https://github.com/rtlsdrblog/rtl-sdr-blog
     cd rtl-sdr-blog
     mkdir build
@@ -23,33 +23,36 @@ RUN <<EOR
     make
     make install
 EOR
-###############################
 
-FROM debian:trixie-slim AS dga-filesystem
-COPY --from=dga-build /usr/local/bin/* /usr/local/bin/
-COPY --from=dga-build /usr/local/lib/librtlsdr.so.0.6git /usr/local/lib/
-COPY muntz.sh /
+FROM alpine AS dga-filesys
 
-RUN <<EOF
-    apt-get -yq update
-    apt-get -yq install libusb-1.0-0 busybox
+COPY --from=dga-build /usr/local /usr/local
 
-	bash /muntz.sh
-	busybox --install -s
-	rm /muntz.sh
+RUN <<EOR
+    apk update
+    apk add libusb bash
 
-#   move libraries
-    cd /usr/lib/x86_64-linux-gnu
-    mv /usr/local/lib/librtlsdr.so.0.6git .
-    ln -s librtlsdr.so.0.6git librtlsdr.so.0
-    ln -s librtlsdr.so.0 librtlsdr.so
-    chmod +x /usr/local/bin/*
-EOF
+    /bin/bash <<END_BASH
+        shopt -s extglob        # bash extension to allow rf !(...)
 
+#       Remove files/directories except those needed
+        cd /                && rm -rf !(dev|run|usr|bin|etc|sbin|lib|sys)
+        cd /usr             && rm -rf !(bin|sbin|lib|local)
+        cd /usr/lib         && rm -rf !(libusb*)
+        cd /usr/local       && rm -rf !(bin|lib)
+        cd /usr/local/lib   && rm -rf !(librtlsdr.so*)
+        cd /lib             && rm -rf !(libc*|ld-musl*)
+        cd /etc             && rm -rf !(group|passwd|shadow)
+        rm /sbin/apk
+        cd /usr/bin && rm getconf getent iconv ldd scanelf ssl_client
+
+END_BASH
+    rm /bin/bash
+EOR
 ##############################
 
-FROM scratch AS dga-install
-COPY --from=dga-filesystem / /
+FROM scratch
+COPY --from=dga-filesys / /
 USER nobody
 
 # No startup command.  Use the compose file to specify startup.
