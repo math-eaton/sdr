@@ -9,7 +9,7 @@
 # libraries are in /usr/local/lib
 # and rtl-* executables are in /usr/local/bin
 #
-FROM debian:bookworm-slim AS dga-build
+FROM debian:trixie-slim AS dga-build
 
 WORKDIR /work
 RUN <<EOR
@@ -25,21 +25,24 @@ RUN <<EOR
 EOR
 ###############################
 
-FROM debian:bookworm-slim AS dga-filesystem
+FROM debian:trixie-slim AS dga-filesystem
 COPY --from=dga-build /usr/local/bin/* /usr/local/bin/
 COPY --from=dga-build /usr/local/lib/librtlsdr.so.0.6git /usr/local/lib/
-COPY rtl-muntz.sh /
+COPY muntz.sh /
 
 RUN <<EOF
     apt-get -yq update
     apt-get -yq install libusb-1.0-0 busybox
-    apt-get clean
 
-	/rtl-muntz.sh
+	bash /muntz.sh
 	busybox --install -s
-	rm /rtl-muntz.sh
-    ln -s /usr/local/lib/librtlsdr.so.0.6git /usr/local/lib/librtlsdr.so.0
-    ln -s /usr/local/lib/librtlsdr.so.0 /usr/local/lib/librtlsdr.so
+	rm /muntz.sh
+
+#   move libraries
+    cd /usr/lib/x86_64-linux-gnu
+    mv /usr/local/lib/librtlsdr.so.0.6git .
+    ln -s librtlsdr.so.0.6git librtlsdr.so.0
+    ln -s librtlsdr.so.0 librtlsdr.so
     chmod +x /usr/local/bin/*
 EOF
 
