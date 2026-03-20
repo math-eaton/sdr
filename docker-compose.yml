@@ -23,7 +23,7 @@ services:
     container_name: rtl-tcp
     build: rtlsdr4
     restart: unless-stopped
-    command: "rtl_tcp -d 0 -a 0.0.0.0 -p 1234 -s 1024000"    
+    command: "rtl_tcp -d 0 -a 0.0.0.0 -p 1234 -s 1024000 -n 128"
     devices:
       - /dev/bus/usb:/dev/bus/usb    
     ports:
