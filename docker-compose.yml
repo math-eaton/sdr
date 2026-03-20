@@ -1,0 +1,52 @@
+# sets up a rtl_tcp server
+#
+# D. G. Adams 2025-March-13
+#
+# rtl_tcp, an I/Q spectrum server for RTL2832 based DVB-T receivers
+#
+#Usage:
+#       [-a listen address. must be set. use  0.0.0.0 to listen all]
+#       [-p listen port (default: 1234)]
+#       [-f frequency to tune to [Hz]]
+#       [-g gain (default: 0 for auto)]
+#       [-s samplerate in Hz (default: 2048000 Hz)]
+#       [-b number of buffers (default: 15, set by library)]
+#       [-n max number of linked list buffers to keep (default: 500)]
+#       [-d device index (default: 0)]
+#       [-P ppm_error (default: 0)]
+#       [-T enable bias-T on GPIO PIN 0 (works for rtl-sdr.com v3/v4 dongles)]
+#       [-D enable direct sampling (default: off)]
+
+name: rtl-tcp
+services:
+  rtl-tcp:
+    container_name: rtl-tcp
+    build: rtlsdr4
+    restart: unless-stopped
+    command: "rtl_tcp -d 0 -a 0.0.0.0 -p 1234 -s 1024000"    
+    devices:
+      - /dev/bus/usb:/dev/bus/usb    
+    ports:
+      - "10.0.0.1:1234:1234"
+    networks:
+      - sdr-net
+
+  sdrppserver:
+    container_name: sdrpp-server
+    profiles:
+      - donotstart
+    build: ./sdrpp-server
+    restart: unless-stopped
+    init: true
+    devices:
+      - /dev/bus/usb
+    ports:
+      - 10.0.0.1:5259:5259
+    volumes:
+      - ./config:/sdrpp/conf.d   
+    networks:
+      - sdr-net
+
+networks:
+  sdr-net:
+    driver: bridge

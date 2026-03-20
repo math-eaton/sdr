@@ -13,13 +13,13 @@ FROM alpine AS dga-build
 
 WORKDIR /work
 RUN <<EOR
-    apk update
-    apk add libusb-dev git cmake build-base pkgconfig 
+    apk update --no-cache
+    apk add --no-cache libusb-dev git cmake build-base pkgconfig 
     git clone https://github.com/rtlsdrblog/rtl-sdr-blog
     cd rtl-sdr-blog
     mkdir build
     cd build
-    cmake ../
+    cmake ../ -DCMAKE_C_FLAGS="-Wno-error=implicit-function-declaration"
     make
     make install
 EOR
@@ -53,6 +53,6 @@ EOR
 
 FROM scratch
 COPY --from=dga-filesys / /
-USER nobody
+# USER nobody
 
 # No startup command.  Use the compose file to specify startup.
