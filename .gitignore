@@ -1,0 +1,9 @@
+# environment config
+.env
+spyserver.config
+
+# ignore binaries
+spyserver 
+
+# not dir
+!/spyserver
